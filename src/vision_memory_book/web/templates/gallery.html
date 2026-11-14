@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Gallery — Vision Memory Book{% endblock %}
+
+{% block content %}
+<h1>Photo Gallery</h1>
+
+<section class="card">
+  <form method="get" action="/gallery" class="row">
+    <input type="text" name="q" value="{{ filters.q }}" placeholder="Search descriptions, tags, filename..." style="flex: 1; min-width: 220px;">
+    <select name="year">
+      <option value="">All years</option>
+      {% for y in available_years %}
+      <option value="{{ y }}" {% if filters.year == y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="tag" value="{{ filters.tag }}" placeholder="Tag (e.g. beach)">
+    <input type="text" name="start_date" value="{{ filters.start_date }}" placeholder="Start (YYYY-MM-DD)">
+    <input type="text" name="end_date" value="{{ filters.end_date }}" placeholder="End (YYYY-MM-DD)">
+    <button class="btn btn-primary" type="submit">Search</button>
+    <a class="btn" href="/gallery">Reset</a>
+  </form>
+</section>
+
+{% if photos %}
+<form id="add-to-group-form" method="post" action="">
+  <input type="hidden" name="action" value="add">
+  <section class="card row" style="justify-content: space-between;">
+    <div class="row">
+      <strong>{{ photos|length }} photo(s) shown</strong>
+      <span class="muted">Select photos below to add to a group:</span>
+    </div>
+    <div class="row">
+      <select id="target-group-select" required>
+        <option value="">Choose group...</option>
+        {% for g in groups %}
+        <option value="{{ g.id }}">{{ g.name }}{% if g.year %} ({{ g.year }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit" onclick="return submitToGroup();">Add Selected to Group</button>
+    </div>
+  </section>
+
+  <div class="grid">
+    {% for p in photos %}
+    <div class="photo-card">
+      <img class="photo-thumb" src="/photos/{{ p.id }}/image" alt="{{ p.filename or 'Photo' }}" loading="lazy">
+      <div class="photo-body">
+        <div class="row" style="justify-content: space-between;">
+          <label class="row" style="gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" name="photo_ids" value="{{ p.id }}">
+            <strong>{{ p.filename or ("Photo #" ~ p.id) }}</strong>
+          </label>
+          <span class="badge">{{ p.status }}</span>
+        </div>
+        {% if p.create_time %}
+        <div class="muted">{{ p.create_time }}</div>
+        {% endif %}
+        {% if p.description %}
+        <div style="font-size: 0.88rem;">{{ p.description }}</div>
+        {% endif %}
+        {% if p.tags %}
+        <div class="row" style="gap: 0.3rem;">
+          {% for tag in p.tags %}
+          <a class="badge" href="/gallery?tag={{ tag }}" style="text-decoration: none;">{{ tag }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</form>
+
+<script>
+function submitToGroup() {
+  var sel = document.getElementById("target-group-select");
+  if (!sel.value) {
+    alert("Please select a group first.");
+    return false;
+  }
+  var form = document.getElementById("add-to-group-form");
+  form.action = "/groups/" + sel.value + "/items";
+  return true;
+}
+</script>
+{% else %}
+<section class="card">
+  <p class="muted">No photos matched your filters.</p>
+</section>
+{% endif %}
+{% endblock %}

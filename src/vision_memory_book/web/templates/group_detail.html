@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }} — Vision Memory Book{% endblock %}
+
+{% block content %}
+<div class="row" style="justify-content: space-between; margin-bottom: 1rem;">
+  <div>
+    <h1 style="margin-bottom: 0.25rem;">{{ group.name }}</h1>
+    <div class="muted">
+      {% if group.year %}Year: {{ group.year }} &middot; {% endif %}
+      Kind: <span class="badge">{{ group.kind }}</span> &middot;
+      {{ photos|length }} photo(s)
+      {% if group.description %} &middot; {{ group.description }}{% endif %}
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn" href="/gallery">Add from Gallery</a>
+    <a class="btn" href="/groups/{{ group.id }}/repick">Final-Touch Re-Pick</a>
+    <a class="btn btn-primary" href="/groups/{{ group.id }}/download.zip">Download ZIP</a>
+  </div>
+</div>
+
+{% if photos %}
+<section class="card">
+  <form method="post" action="/groups/{{ group.id }}/items" class="row">
+    <input type="hidden" name="action" value="reorder">
+    <label for="ordered_photo_ids"><strong>Reorder (comma-separated photo IDs):</strong></label>
+    <input
+      id="ordered_photo_ids"
+      type="text"
+      name="ordered_photo_ids"
+      value="{{ photos | map(attribute='id') | join(',') }}"
+      style="flex: 1; min-width: 240px;"
+    >
+    <button class="btn" type="submit">Save Order</button>
+  </form>
+</section>
+
+<div class="grid">
+  {% for p in photos %}
+  <div class="photo-card">
+    <img class="photo-thumb" src="/photos/{{ p.id }}/image?prefer_original=true" alt="{{ p.filename or 'Photo' }}">
+    <div class="photo-body">
+      <div class="row" style="justify-content: space-between;">
+        <strong>#{{ p.id }} {{ p.filename or "" }}</strong>
+        {% if p.original_path %}
+        <span class="badge badge-ok">Original</span>
+        {% else %}
+        <span class="badge badge-warn">Cached</span>
+        {% endif %}
+      </div>
+      {% if p.create_time %}
+      <div class="muted">{{ p.create_time }}</div>
+      {% endif %}
+      {% if p.description %}
+      <div class="muted">{{ p.description }}</div>
+      {% endif %}
+
+      <form method="post" action="/groups/{{ group.id }}/items" class="row" style="margin-top: auto;">
+        <input type="hidden" name="action" value="update_caption">
+        <input type="hidden" name="photo_id" value="{{ p.id }}">
+        <input type="text" name="caption" value="{{ p.caption or '' }}" placeholder="Caption..." style="flex: 1; min-width: 120px;">
+        <button class="btn btn-sm" type="submit">Save</button>
+      </form>
+
+      <form method="post" action="/groups/{{ group.id }}/items">
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="photo_id" value="{{ p.id }}">
+        <button class="btn btn-sm btn-danger" type="submit" style="width: 100%;">Remove from Group</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<section class="card">
+  <p class="muted">This group has no photos yet. <a href="/gallery">Browse the gallery</a> to add some.</p>
+</section>
+{% endif %}
+{% endblock %}

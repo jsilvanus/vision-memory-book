@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Vision Memory Book{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<section class="card">
+  <div class="row" style="justify-content: space-between; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">Job Queue</h2>
+    <div class="row">
+      <form method="post" action="/queue/control" style="display:inline;">
+        <input type="hidden" name="action" value="pause">
+        <button class="btn" type="submit">Pause Pending</button>
+      </form>
+      <form method="post" action="/queue/control" style="display:inline;">
+        <input type="hidden" name="action" value="resume">
+        <button class="btn btn-primary" type="submit">Resume Paused</button>
+      </form>
+      <form method="post" action="/queue/control" style="display:inline;">
+        <input type="hidden" name="action" value="retry_failed">
+        <button class="btn" type="submit">Retry Failed</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-label">Total Jobs</div>
+      <div class="stat-value">{{ queue_stats.total }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ queue_stats.by_status.get("pending", 0) }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Running</div>
+      <div class="stat-value">{{ queue_stats.by_status.get("running", 0) }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Paused</div>
+      <div class="stat-value">{{ queue_stats.by_status.get("paused", 0) }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Done</div>
+      <div class="stat-value">{{ queue_stats.by_status.get("done", 0) }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value">{{ queue_stats.by_status.get("failed", 0) }}</div>
+    </div>
+  </div>
+
+  {% if queue_stats.by_type %}
+  <h3 style="margin-top: 1.25rem; font-size: 1rem;">By Job Type</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Job Type</th>
+        <th>Pending</th>
+        <th>Running</th>
+        <th>Paused</th>
+        <th>Done</th>
+        <th>Failed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for jtype, counts in queue_stats.by_type.items() %}
+      <tr>
+        <td><code>{{ jtype }}</code></td>
+        <td>{{ counts.get("pending", 0) }}</td>
+        <td>{{ counts.get("running", 0) }}</td>
+        <td>{{ counts.get("paused", 0) }}</td>
+        <td>{{ counts.get("done", 0) }}</td>
+        <td>{{ counts.get("failed", 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if queue_stats.recent_errors %}
+  <h3 style="margin-top: 1.25rem; font-size: 1rem;">Recent Errors</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Job ID</th>
+        <th>Type</th>
+        <th>Photo ID</th>
+        <th>Error</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for err in queue_stats.recent_errors %}
+      <tr>
+        <td>{{ err.id }}</td>
+        <td><code>{{ err.job_type }}</code></td>
+        <td>{{ err.photo_id }}</td>
+        <td class="muted">{{ err.last_error }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="row" style="justify-content: space-between; margin-bottom: 0.75rem;">
+    <h2 style="margin: 0;">Library &amp; Year Stats ({{ total_photos }} photos)</h2>
+    <a class="btn" href="/gallery">Browse Gallery</a>
+  </div>
+
+  {% if year_stats_list %}
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Total</th>
+        <th>Indexed</th>
+        <th>Downloaded</th>
+        <th>Failed</th>
+        <th>Top Tags</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ys in year_stats_list %}
+      <tr>
+        <td><a href="/gallery?year={{ ys.year }}">{{ ys.year }}</a></td>
+        <td>{{ ys.total_photos }}</td>
+        <td>{{ ys.indexed_photos }}</td>
+        <td>{{ ys.downloaded_photos }}</td>
+        <td>{{ ys.failed_photos }}</td>
+        <td>
+          {% for t in ys.top_tags[:5] %}
+          <span class="badge">{{ t.tag }} ({{ t.count }})</span>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No photos ingested yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="row" style="justify-content: space-between; margin-bottom: 0.75rem;">
+    <h2 style="margin: 0;">Recent Groups</h2>
+    <a class="btn btn-primary" href="/groups">Manage Groups</a>
+  </div>
+
+  {% if recent_groups %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Year</th>
+        <th>Kind</th>
+        <th>Photos</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in recent_groups %}
+      <tr>
+        <td><a href="/groups/{{ g.id }}">{{ g.name }}</a></td>
+        <td>{{ g.year or "—" }}</td>
+        <td><span class="badge">{{ g.kind }}</span></td>
+        <td>{{ g.photo_count }}</td>
+        <td>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}">Open</a>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}/repick">Re-Pick</a>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}/download.zip">ZIP</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No groups created yet. <a href="/groups">Create one</a>.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Final-Touch Re-Pick — {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row" style="justify-content: space-between; margin-bottom: 1rem;">
+  <div>
+    <h1 style="margin-bottom: 0.25rem;">Final-Touch Re-Pick: {{ group.name }}</h1>
+    <div class="muted">
+      {{ missing_originals|length }} of {{ total_count }} photo(s) still need full-resolution (<code>=d</code>) originals.
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn" href="/groups/{{ group.id }}">Back to Group</a>
+    <a class="btn btn-primary" href="/groups/{{ group.id }}/repick/manifest.json" download="group-{{ group.id }}-repick-manifest.json">Download Manifest JSON</a>
+  </div>
+</div>
+
+{% if matched_count is not none %}
+<div class="alert">
+  Matched <strong>{{ matched_count }}</strong> photo(s) and enqueued <code>repick_original</code> download jobs.
+</div>
+{% endif %}
+
+<section class="card">
+  <h2>Photos Needing Full-Resolution Original ({{ missing_originals|length }})</h2>
+  {% if missing_originals %}
+  <table>
+    <thead>
+      <tr>
+        <th>Photo ID</th>
+        <th>Picker ID</th>
+        <th>Filename</th>
+        <th>Create Time</th>
+        <th>Caption</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in missing_originals %}
+      <tr>
+        <td>{{ item.photo_id }}</td>
+        <td><code>{{ item.picker_id }}</code></td>
+        <td>{{ item.filename or "—" }}</td>
+        <td>{{ item.create_time or "—" }}</td>
+        <td class="muted">{{ item.caption or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">All photos in this group already have full-resolution originals downloaded.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Match Re-Picked Items</h2>
+  <p class="muted">
+    Paste a JSON array of newly picked <code>{"picker_id": "...", "base_url": "..."}</code> objects
+    from your Google Photos Picker session to enqueue <code>repick_original</code> jobs.
+  </p>
+  <form method="post" action="/groups/{{ group.id }}/repick/match">
+    <textarea name="items_json" rows="6" style="width: 100%; font-family: monospace; margin-bottom: 0.75rem;" placeholder='[{"picker_id": "pick-1", "base_url": "https://lh3.googleusercontent.com/..."}]'></textarea>
+    <button class="btn btn-primary" type="submit">Match &amp; Enqueue Original Downloads</button>
+  </form>
+</section>
+
+{% if completed_originals %}
+<section class="card">
+  <h2>Already Has Original ({{ completed_originals|length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Photo ID</th>
+        <th>Picker ID</th>
+        <th>Filename</th>
+        <th>Original Path</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in completed_originals %}
+      <tr>
+        <td>{{ item.photo_id }}</td>
+        <td><code>{{ item.picker_id }}</code></td>
+        <td>{{ item.filename or "—" }}</td>
+        <td class="muted"><code>{{ item.original_path }}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

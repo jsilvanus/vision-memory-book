@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Groups — Vision Memory Book{% endblock %}
+
+{% block content %}
+<h1>Photo Groups</h1>
+
+<section class="card">
+  <h2>Create Group</h2>
+  <form method="post" action="/groups" class="row">
+    <input type="text" name="name" placeholder="Group name (e.g. Summer Trip 2024)" required style="flex: 1; min-width: 220px;">
+    <input type="number" name="year" placeholder="Year" style="width: 100px;">
+    <select name="kind">
+      <option value="manual">manual</option>
+      <option value="book_chapter">book_chapter</option>
+    </select>
+    <input type="text" name="description" placeholder="Optional description" style="flex: 1; min-width: 200px;">
+    <button class="btn btn-primary" type="submit">Create Group</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>All Groups ({{ groups|length }})</h2>
+  {% if groups %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Year</th>
+        <th>Kind</th>
+        <th>Photos</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in groups %}
+      <tr>
+        <td>{{ g.id }}</td>
+        <td><a href="/groups/{{ g.id }}"><strong>{{ g.name }}</strong></a></td>
+        <td>{{ g.year or "—" }}</td>
+        <td><span class="badge">{{ g.kind }}</span></td>
+        <td>{{ g.photo_count }}</td>
+        <td class="muted">{{ g.description or "" }}</td>
+        <td>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}">View</a>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}/repick">Re-Pick</a>
+          <a class="btn btn-sm" href="/groups/{{ g.id }}/download.zip">ZIP</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No groups yet. Create one above.</p>
+  {% endif %}
+</section>
+{% endblock %}
