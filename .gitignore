@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local data & secrets
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db*
+credentials.json
+token.json
+.env
+
+# OS
+.DS_Store
