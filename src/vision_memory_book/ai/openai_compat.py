@@ -14,8 +14,12 @@ from vision_memory_book.config import Settings
 DEFAULT_VISION_PROMPT = (
     "Analyze this photo and respond with a single JSON object containing:\n"
     '- "description": a concise 1-3 sentence description of the scene, lighting, and moment\n'
-    '- "tags": an array of 5-15 lowercase descriptive keyword tags\n'
-    '- "scene": a short setting/scene label (e.g. "beach sunset", "family dinner")\n'
+    '- "tags": an array of 5-15 lowercase descriptive keyword tags. Always include '
+    "specific tags when visible for:\n"
+    '  * documents/paperwork: "receipt", "invoice", "document", "ticket", "screenshot", "handwriting"\n'
+    '  * people & roles: "child", "children", "baby", "family", "elderly", "priest", "clergy"\n'
+    '  * places & ceremonies: "church", "chapel", "cemetery", "coffin", "funeral", "wedding", "baptism", "birthday"\n'
+    '- "scene": a short setting/scene label (e.g. "beach sunset", "family dinner", "church ceremony")\n'
     '- "subjects": an array of main subjects or objects in the photo\n'
     "Return only valid JSON."
 )
