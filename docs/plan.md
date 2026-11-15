@@ -163,6 +163,8 @@ vision-memory-book/
    - Build FastAPI + HTMX UI for Picker import, queue status, photo search, group curation, ZIP export, and a **Final-Touch Re-Pick** flow (generates a date/filename checklist for a finalized group/book, opens a Picker session, matches picked items by `picker_id`, and downloads `=d` originals into `data/originals/`).
 6. **Phase 6 — Yearly Memory Book Generator**
    - Build the LLM-driven yearly curator (selects chapters/themes into groups, writes captions/intros) and PDF renderer (automatically preferring `=d` re-picked originals when present, falling back to cached copies).
+7. **Phase 7 — Local Person Clustering & Curation (Face Recognition)**
+   - Add an optional local ONNX face pipeline (`insightface` / `RetinaFace` + `ArcFace`) alongside Ollama/Aidos, with nameless-first clusters, cluster naming/merging, and persistent **"Not Person A"** exclusions.
 
 ---
 
@@ -174,3 +176,20 @@ vision-memory-book/
 | **Picker session item limit (~2,000 items)** | Process by year or half-year; deduplicate on `picker_id` in SQLite. |
 | **Aidos vision endpoint not yet exposed** | Support split provider config so Ollama can run vision while Aidos runs embeddings/text, with zero code changes when Aidos adds vision. |
 | **Local VLM throughput on large libraries** | Resumable SQLite queue with pause/resume, configurable image size (`1024px` sent to VLM even if `2048px` is cached), and graceful shutdown on SIGINT/SIGTERM. |
+
+---
+
+## 9. Phase 7 Design: Local Person Clustering & Curation
+
+- **Inference Split:** Keep **Ollama / Aidos** for VLM, text LLM, and text embeddings (they already handle GGUF/MLC quantization, VRAM management, and OpenAI-compatible serving). Run **only face detection & 512-d ArcFace embeddings** locally via `insightface` + `onnxruntime` (~150 MB models, runs cleanly on CPU without colliding with Ollama's GPU memory).
+- **Schema Extensions:**
+  - `person_clusters`: `id`, `label` (defaults to `person_001`, user-editable), `cover_face_id`, `created_at`, `updated_at`.
+  - `faces`: `id`, `photo_id`, `bbox_json`, `det_score`, `cluster_id` (nullable), `locked_manual` (boolean—prevents re-clustering from undoing manual edits).
+  - `face_embeddings`: `sqlite-vec` `vec0` table (`FLOAT[512]`).
+  - `face_exclusions`: `(face_id, cluster_id)` primary key—records **"Not Person A"** rejections so incremental matching and re-clustering never put that face back into that cluster.
+- **Curation Workflows (Web UI `/people` + MCP):**
+  - **Name / Rename:** Label `person_001` → `"Alice"`.
+  - **Merge:** Combine multiple clusters (e.g., child vs. older photos of the same person).
+  - **Remove ("Not Person A"):** Clears `cluster_id` (or moves to a chosen cluster), sets `locked_manual = 1`, and writes `(face_id, cluster_id)` to `face_exclusions`.
+  - **Search & Book Curation:** Filter `search_photos(person_ids=[...])` to find solo portraits or co-occurrences (e.g., all photos with both Person A and Person B).
+
