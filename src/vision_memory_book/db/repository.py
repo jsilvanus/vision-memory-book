@@ -662,6 +662,24 @@ class Repository:
         self.conn.commit()
         return int(cur.lastrowid)
 
+    def update_book_paths(
+        self,
+        book_id: int,
+        html_path: str | None = None,
+        pdf_path: str | None = None,
+    ) -> None:
+        self.conn.execute(
+            """
+            UPDATE books
+            SET html_path = COALESCE(?, html_path),
+                pdf_path = COALESCE(?, pdf_path),
+                updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+            WHERE id = ?
+            """,
+            (html_path, pdf_path, book_id),
+        )
+        self.conn.commit()
+
     def get_book(self, book_id: int) -> dict[str, Any] | None:
         row = self.conn.execute("SELECT * FROM books WHERE id = ?", (book_id,)).fetchone()
         return dict(row) if row is not None else None
